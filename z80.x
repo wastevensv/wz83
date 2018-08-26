@@ -24,8 +24,7 @@ SECTIONS
     .priv 0x4000 : AT(0x70000) {
         *(.priv)
     } > rom
-    .pad LENGTH(rom) - 1 : {
-    	 . = ORIGIN(rom) + LENGTH(rom) - 1;
+    .pad : AT(LENGTH(rom) -1) {
 	 BYTE(0x42)
-    } > rom =0x575A
+    } > rom
 }

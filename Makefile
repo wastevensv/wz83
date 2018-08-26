@@ -15,8 +15,12 @@ TARGET=$(OUTDIR)/$(NAME)
 INCLUDE=-I./include
 LDFLAGS=-T z80.x
 
+.PHONY: all run clean
 
 all: $(TARGET).rom
+
+run: $(TARGET).rom
+	z80e-sdl --debug $(TARGET).rom
 
 $(TARGET).rom: $(TARGET).elf
 	@mkdir -p $(OUTDIR)
