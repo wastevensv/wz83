@@ -1,17 +1,21 @@
 .section .text
 start:
-    ld hl, message
-
+    call init_display
+    
     ;; Set screen buffer to pattern.
     ld hl, 0xC000
     push hl
-    ld (hl), 0xCC
+
+    ld (hl), 0x55
     ld de, 0xC001
     ld bc, 767
     ldir
 
     pop iy
-    call display_copy
+    call display_graphic
+
+    ld iy, font_map
+    call display_text
     jr $
 
 .section .data

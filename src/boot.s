@@ -33,8 +33,11 @@ startup:
     ; ld a, INT_ON | INT_TIMER1 | INT_LINK
     out (PORT_INT_MASK), a
 
-    ld a, 1 ; Init program in page 2
+    ld a, 1 ; Init program in page 1
     out (PORT_BANKA), a
+
+    ld a, 2 ; Data in page 2
+    out (PORT_BANKB), a
 
     jp 0x4000
     rst 0 ; Prevent runaway code from unlocking flash

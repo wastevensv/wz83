@@ -19,6 +19,8 @@ SECTIONS
     .text 0x4000 : AT(0x4000) {
         out/init.o(.text)
         *(.text)
+    } > rom
+    .data 0x8000 : AT(0x8000) {
         *(.data)
     } > rom
     .priv 0x4000 : AT(0x70000) {
