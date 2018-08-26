@@ -49,6 +49,7 @@ init_graphic:
 ;;  Copies a text buffer to the LCD.
 ;; Inputs:
 ;;  IY: Text buffer (byte per character)
+;;  D: Starting line (in Pixels)
 display_text:
         push hl
         push bc
@@ -61,37 +62,41 @@ display_text:
                 push iy
                 pop hl
 
-                ld a, LCD_CMD_SETROW
+                ld a, d
+                add a, LCD_CMD_SETROW
+                ld d, a
+1: ; Newline
                 call lcd_busy_loop
                 out (PORT_LCD_CMD), a
-
                 ld a, LCD_CMD_SETCOLUMN
-1: ; Set column
+2: ; Next column
                 call lcd_busy_loop
                 out (PORT_LCD_CMD),a
 
                 ld b,5
                 push af
-2: ; Draw character
+3: ; Draw character
                     ld a, (hl)
                     call lcd_busy_loop
                     out (PORT_LCD_DATA), a
                     inc hl
-                    djnz 2b
+                    djnz 3b     ; Advance to next row.
 
-                    ld a, LCD_CMD_SETROW ; Reset to line 0
+                    ld a, d
                     call lcd_busy_loop
                     out (PORT_LCD_CMD), a
-                ;;dec h
-                ;;dec h
-                ;;dec h
-                ;;inc hl
                 pop af
 
-
                 inc a           ; Advance to next column
-                cp 0x13 + LCD_CMD_SETCOLUMN
-                jp nz, 1b
+                cp 0x10 + LCD_CMD_SETCOLUMN
+                jp nz, 2b
+
+                ld a, d
+                add a, 6
+                ld d, a
+                cp 0x3B + LCD_CMD_SETROW
+                jp m, 1b        ; Advance to next line
+                jp z, 1b
             pop af
         ei
     pop de
