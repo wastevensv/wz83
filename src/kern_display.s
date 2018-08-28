@@ -4,6 +4,7 @@
 .global init_display
 ;; Initialize LCD
 init_display:
+    push af
     ld a, 1 + LCD_CMD_SETDISPLAY
     call lcd_busy_loop
     out (PORT_LCD_CMD), a ; Enable screen
@@ -20,48 +21,53 @@ init_display:
     call lcd_busy_loop
     out (PORT_LCD_CMD), a       ; X-Increment Mode (vertical)
 
+    pop af
     ret
 
 .global init_text
 ;; Initialize LCD for text mode
 init_text:
+    push af
     in a, (PORT_LCD_CMD)        ; Check if already in text mode.
     and LCD_CMD_8BITS
-    ret z
+    jp z, 1f
     
     ld a, 0 + LCD_CMD_SETOUTPUTMODE
     call lcd_busy_loop
     out (PORT_LCD_CMD), a       ; 6-bit mode
-
+1:  pop af
     ret
 
 .global init_graphic
 ;; Initialize LCD for graphical mode
 init_graphic:
+    push af
     in a, (PORT_LCD_CMD)        ; Check if already in graphic mode.
     and LCD_CMD_8BITS
-    ret nz
+    jp nz, 1f
     
     ld a, 1 + LCD_CMD_SETOUTPUTMODE
     call lcd_busy_loop
     out (PORT_LCD_CMD), a       ; 8-bit mode
-
+1:  pop af
     ret
 
-.global display_glyph
-;; display_glyph
-;;  Displays a character glyph on the LCD.
+.global putg
+;; putg
+;;  Displays a character 5x6 glyph on the LCD.
 ;; Inputs:
 ;;  HL: Glyph to print
 ;;  D: Starting line (in Pixels)
 ;;  E: Starting column (in column)
 ;; Outputs:
 ;;  None
-display_glyph:
+putg:
     push hl
     push af
     push bc
     push de
+        di
+        call init_text
     ; Set column
         ld a, e
         add a, LCD_CMD_SETCOLUMN
@@ -88,6 +94,7 @@ display_glyph:
         add a, LCD_CMD_SETROW
         call lcd_busy_loop
         out (PORT_LCD_CMD), a
+        ei
     pop de
     pop bc
     pop af
@@ -95,7 +102,7 @@ display_glyph:
     ret
 
 .global putc
-;; display_glyph
+;; putc
 ;;  Displays a character on the LCD
 ;;  at current location.
 ;; Inputs:
@@ -105,26 +112,33 @@ display_glyph:
 ;; Outputs:
 ;;  None
 putc: 
-    push bc
+    push hl
+
     push de
+    push af
+
+    sub 0x20        ; Subtract 32 from a.
+    ld hl, font
+    jp m, 1f
+
+    ld h, 0
+    ld l, a
 
     ld d, 0
     ld e, a
 
-    ld hl, 0
-    add hl, de
-    add hl, hl      ; Double hl (2B adresses in LUT)
-    ld de, font_lut
+    add hl, hl      ; Double hl (x2)
+    add hl, hl      ; Double hl (x4)
+    add hl, de      ; a + hl (x5)
+    ld de, font
     add hl, de      ; Add base address to offset
-    ld b, (hl)
-    inc hl
-    ld h, (hl)      ; Load address of glyph
-    ld l, b
 
+1:  pop af
     pop de
-    pop bc
 
-    call display_glyph
+    call putg
+
+    pop hl
 
     ret
     
