@@ -14,11 +14,16 @@ start:
     pop iy
     call display_graphic
 
+    ld e, 1
     ld d, 2
-    ld iy, font_map
+    ld iy, message
+    call display_text
+    ld iy, messageB
     call display_text
     jr $
 
 .section .data
 message:
     .db "Hello, userspace!", 0
+messageB:
+    .db " It works!", 0

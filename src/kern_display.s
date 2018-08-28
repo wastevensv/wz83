@@ -45,38 +45,69 @@ init_graphic:
     ret
 
 .global display_text
-;; display_copy
-;;  Copies a text buffer to the LCD.
+;; display_text
+;;  Copies a string to the LCD.
 ;; Inputs:
 ;;  IY: Text buffer (byte per character)
 ;;  D: Starting line (in Pixels)
+;;  E: Starting column (in columns)
+;; Outputs:
+;;  D: Ending line (in Pixels)
+;;  E: Ending column (in columns)
 display_text:
+        push iy
         push hl
         push bc
         push af
-        push de
             di
             call init_text
             ld a, i
             push af
-                push iy
-                pop hl
+            push hl
 
                 ld a, d
                 add a, LCD_CMD_SETROW
                 ld d, a
+
 1: ; Newline
                 call lcd_busy_loop
                 out (PORT_LCD_CMD), a
-                ld a, LCD_CMD_SETCOLUMN
-2: ; Next column
+2: ; Next character
+;;; TODO: Move into seperate putchar function
+                ld a, e
+                add a, LCD_CMD_SETCOLUMN
                 call lcd_busy_loop
                 out (PORT_LCD_CMD),a
 
-                ld b,5
+                push bc
+                push de
+
+                ld d, 0
+                ld e, (iy)      ; Load character code.
+                inc e
+                dec e 
+                jp z, 5f         ; if 0, end of string.
+
+                ld hl, 0
+                add hl, de
+                add hl, hl      ; Double hl (2B adresses in LUT)
+                ld de, font_lut
+                add hl, de      ; Add base address to offset
+                ld b, (hl)
+                inc hl
+                ld h, (hl)      ; Load address of character
+                ld l, b
+
+                pop de
+                pop bc
+
+                push hl
                 push af
+                push bc
+                    ld b,5
 3: ; Draw character
                     ld a, (hl)
+                    
                     call lcd_busy_loop
                     out (PORT_LCD_DATA), a
                     inc hl
@@ -85,28 +116,44 @@ display_text:
                     ld a, d
                     call lcd_busy_loop
                     out (PORT_LCD_CMD), a
+                pop bc
                 pop af
+                pop hl
 
-                inc a           ; Advance to next column
-                cp 0x10 + LCD_CMD_SETCOLUMN
-                jp nz, 2b
+                inc iy          ; Advance to next character
+
+                inc e           ; Advance to next column
+                cp 0x0F + LCD_CMD_SETCOLUMN ; Check if last column
+                jp m, 2b
 
                 ld a, d
                 add a, 6
                 ld d, a
+                ld e, 0
                 cp 0x3B + LCD_CMD_SETROW
                 jp m, 1b        ; Advance to next line
                 jp z, 1b
+4: ; End loop.
+            ld a, d
+            sub LCD_CMD_SETROW
+            ld d, a
+            pop hl
             pop af
         ei
-    pop de
     pop af
     pop bc
     pop hl
+    pop iy
     ret
 
+5: ; Handle NUL terminator.
+    pop de
+    pop af
+    jp 4b
+
+
 .global display_graphic
-;; display_copy
+;; display_graphic
 ;;  Copies a screen buffer to the LCD.
 ;; Inputs:
 ;;  IY: Screen buffer (bit per pixel)

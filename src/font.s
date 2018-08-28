@@ -1,12 +1,12 @@
 .section .data
 
+.global font
 ;;; 0x00      = Space
 ;;; 0x10-0x19 = Numbers 1-9
 ;;; 0x21-0x3A = Letters A-Z
 ;;; 0x41-0x5A = Letters a-z
-
-.global font_map
-font_map:
+;;; Add 0x20 to get index, then mul by 5 to get offset.
+font:
     ; [space]
     .db 0b00000000
     .db 0b00000000
@@ -231,12 +231,12 @@ font_map:
     .db 0b00000000
     .db 0b00001000
 
-    ; (DEL   )
-    .db 0b00010100
-    .db 0b00001010
-    .db 0b00010100
-    .db 0b00001010
-    .db 0b00010100
+    ; @
+    .db 0b00001000
+    .db 0b00011100
+    .db 0b00011100
+    .db 0b00010000
+    .db 0b00001100
 
     ; A
     .db 0b00001000
@@ -644,13 +644,6 @@ font_map:
     .db 0b00011000
     .db 0b00011100
 
-    ; @
-    .db 0b00001000
-    .db 0b00011100
-    .db 0b00011100
-    .db 0b00010000
-    .db 0b00001100
-
     ; {
     .db 0b00001100
     .db 0b00001000
@@ -679,6 +672,13 @@ font_map:
     .db 0b00000000
     .db 0b00000000
     
+    ; Chessboard
+    .db 0b00010100
+    .db 0b00001010
+    .db 0b00010100
+    .db 0b00001010
+    .db 0b00010100
+
     ; ‚
     .db 0b00000000
     .db 0b00000000
@@ -791,4 +791,122 @@ font_map:
     .db 0b00000000
     .db 0b00000000
 
-    .zero (800+font_map-$)
+    .zero (800+font-$)
+
+.global font_lut
+font_lut:
+.rept 32
+     .dw font+475
+.endr
+.dw  font+0
+.dw  font+5
+.dw  font+10
+.dw  font+15
+.dw  font+20
+.dw  font+25
+.dw  font+30
+.dw  font+35
+.dw  font+40
+.dw  font+45
+.dw  font+50
+.dw  font+55
+.dw  font+60
+.dw  font+65
+.dw  font+70
+.dw  font+75
+.dw  font+80
+.dw  font+85
+.dw  font+90
+.dw  font+95
+.dw  font+100
+.dw  font+105
+.dw  font+110
+.dw  font+115
+.dw  font+120
+.dw  font+125
+.dw  font+130
+.dw  font+135
+.dw  font+140
+.dw  font+145
+.dw  font+150
+.dw  font+155
+.dw  font+160
+.dw  font+165
+.dw  font+170
+.dw  font+175
+.dw  font+180
+.dw  font+185
+.dw  font+190
+.dw  font+195
+.dw  font+200
+.dw  font+205
+.dw  font+210
+.dw  font+215
+.dw  font+220
+.dw  font+225
+.dw  font+230
+.dw  font+235
+.dw  font+240
+.dw  font+245
+.dw  font+250
+.dw  font+255
+.dw  font+260
+.dw  font+265
+.dw  font+270
+.dw  font+275
+.dw  font+280
+.dw  font+285
+.dw  font+290
+.dw  font+295
+.dw  font+300
+.dw  font+305
+.dw  font+310
+.dw  font+315
+.dw  font+320
+.dw  font+325
+.dw  font+330
+.dw  font+335
+.dw  font+340
+.dw  font+345
+.dw  font+350
+.dw  font+355
+.dw  font+360
+.dw  font+365
+.dw  font+370
+.dw  font+375
+.dw  font+380
+.dw  font+385
+.dw  font+390
+.dw  font+395
+.dw  font+400
+.dw  font+405
+.dw  font+410
+.dw  font+415
+.dw  font+420
+.dw  font+425
+.dw  font+430
+.dw  font+435
+.dw  font+440
+.dw  font+445
+.dw  font+450
+.dw  font+455
+.dw  font+460
+.dw  font+465
+.dw  font+470
+.dw  font+475
+.dw  font+480
+.dw  font+485
+.dw  font+490
+.dw  font+495
+.dw  font+500
+.dw  font+505
+.dw  font+510
+.dw  font+515
+.dw  font+520
+.dw  font+525
+.dw  font+530
+.dw  font+535
+.dw  font+540
+.dw  font+545
+.dw  font+550
+.dw  font+555
