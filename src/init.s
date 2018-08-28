@@ -14,12 +14,13 @@ start:
     pop iy
     call display_graphic
 
+    ld c, 0
     ld e, 1
     ld d, 2
     ld iy, message
-    call display_text
+    call puts
     ld iy, messageB
-    call display_text
+    call puts
     jr $
 
 .section .data
