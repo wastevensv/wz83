@@ -1,4 +1,4 @@
-.section .data
+.section .kdata
 
 .global font
 ;;; 0x00      = Space

@@ -1,7 +1,7 @@
 .include "constants.inc.s"
 .include "flash.inc.s"
 
-.section .kern
+.section .ktext
 
     rst 0; Just in case.
 

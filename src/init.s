@@ -1,4 +1,4 @@
-.section .text
+.section .init
 start:
     call init_display
     
@@ -14,6 +14,7 @@ start:
     pop iy
     call display_graphic
 
+    ;; Display messages
     ld c, 0
     ld e, 1
     ld d, 2

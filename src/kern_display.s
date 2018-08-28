@@ -1,6 +1,6 @@
 .include "constants.inc.s"
 
-.section .kern
+.section .ktext
 .global init_display
 ;; Initialize LCD
 init_display:

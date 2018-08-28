@@ -14,19 +14,20 @@ SECTIONS
 {
     .kern 0x0 : AT(0x0)  {
         *(.boot)
-        *(.kern)
+        *(.ktext)
     } > rom
     .text 0x4000 : AT(0x4000) {
-        out/init.o(.text)
+        *(.init)
         *(.text)
     } > rom
     .data 0x8000 : AT(0x8000) {
+        *(.kdata)
         *(.data)
     } > rom
     .priv 0x4000 : AT(0x70000) {
         *(.priv)
     } > rom
-    .pad : AT(LENGTH(rom) -1) {
+    .pad : AT(LENGTH(rom) - 1) {
 	 BYTE(0x42)
     } > rom
 }
