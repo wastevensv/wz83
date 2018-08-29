@@ -20,6 +20,9 @@ LDFLAGS=-T z80.x
 all: $(TARGET).rom
 
 run: $(TARGET).rom
+	z80e-sdl $(TARGET).rom
+
+debug: $(TARGET).rom
 	z80e-sdl --debug $(TARGET).rom
 
 $(TARGET).rom: $(TARGET).elf
