@@ -9,6 +9,7 @@
 ;;  A - Key value pressed
 get_key:
     push bc
+    push de
 
     ld c, PORT_KEYPAD
     ld d, 0xFE
@@ -37,6 +38,7 @@ get_key:
 
     call map_key
 
+    pop de
     pop bc
     ret
 

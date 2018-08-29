@@ -72,7 +72,7 @@ putg:
         ld a, e
         add a, LCD_CMD_SETCOLUMN
         call lcd_busy_loop
-        out (PORT_LCD_CMD),a
+        out (PORT_LCD_CMD), a
 
     ; Set row
         ld a, d
@@ -110,12 +110,12 @@ putg:
 ;;  D: Starting line (in Pixels)
 ;;  E: Starting column (in column)
 ;; Outputs:
-;;  None
+;;  D: Ending line (in Pixels)
+;;  E: Ending column (in column)
 putc: 
-    push hl
-
-    push de
     push af
+    push hl
+    push de
 
     sub 0x20        ; Subtract 32 from a.
     ld hl, font
@@ -133,21 +133,51 @@ putc:
     ld de, font
     add hl, de      ; Add base address to offset
 
-1:  pop af
     pop de
 
-    call putg
+1:  call putg
+
+    ; Advance to next column
+    inc e
+    ld a, e
+    cp 0x10 ; Check if right margin
+    call z, newline
 
     pop hl
-
+    pop af
     ret
     
+.global newline
+;;; newline
+;;; Inputs:
+;;;  D: Current line (in Pixels)
+;;; Outputs:
+;;;  D: Next line (in Pixels)
+;;;  E: 0
+newline:
+;; Return to first column
+    push af
+    ld a, LCD_CMD_SETCOLUMN
+    call lcd_busy_loop
+    out (PORT_LCD_CMD), a
+    ld e, 0
+
+;; Advance to next line
+    ld a, d
+    add a, 6
+    ld d, a
+
+    add a, LCD_CMD_SETCOLUMN
+    call lcd_busy_loop
+    out (PORT_LCD_CMD), a
+    pop af
+    ret
+
 .global puts
 ;; puts
 ;;  Copies a string to the LCD.
 ;; Inputs:
 ;;  IY: Text buffer (byte per character)
-;;  C: Right Margin (in columns, or 0 for max.)
 ;;  D: Starting line (in Pixels)
 ;;  E: Starting column (in columns)
 ;; Outputs:
@@ -159,46 +189,16 @@ puts:
     push bc
     push af
     di
-        call init_text
-        push af
-        push hl
-    ; Check for zero right margin.
-    ; If right margin is zero, set to max margin.
-        ld a, 0
-        cp c
-        jp nz, 1f
-        ld c, 0x10
-1: ; Newline
-        ld a, e
-        add a, LCD_CMD_SETCOLUMN
-        call lcd_busy_loop
-        out (PORT_LCD_CMD), a
-2: ; Next character
-
+1: ; Next character
         ld a, (iy)      ; Load character code.
         cp 0
-        jp z, 3f         ; if 0, end of string.
+        jp z, 2f         ; if 0, end of string.
 
         call putc
     
         inc iy          ; Advance to next character
-
-        inc e           ; Advance to next column
-        ld a, e
-        cp c            ; Check if right margin
-        jp m, 1b
-
-;; Advance to next line
-        ld a, d
-        add a, 6
-        ld d, a
-        ld e, 0
-        cp 0x3B
-        jp m, 2b
-        jp z, 2b
-3: ; End loop.
-        pop hl
-        pop af
+        jp 1b
+2: ; End loop.
     ei
     pop af
     pop bc
