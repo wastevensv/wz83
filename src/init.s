@@ -1,7 +1,7 @@
 .section .init
 start:
     call init_display
-    
+
     ;; Set screen buffer to pattern.
     ld hl, 0xC000
     push hl
@@ -22,7 +22,13 @@ start:
     call puts
     ld iy, messageB
     call puts
-    jr $
+1:
+    call get_key
+    cp 0x0A
+    jp z, end
+    call putc
+    jp 1b
+end:jr $
 
 .section .data
 message:

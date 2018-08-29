@@ -188,12 +188,13 @@ puts:
         cp c            ; Check if right margin
         jp m, 1b
 
+;; Advance to next line
         ld a, d
         add a, 6
         ld d, a
         ld e, 0
         cp 0x3B
-        jp m, 2b        ; Advance to next line
+        jp m, 2b
         jp z, 2b
 3: ; End loop.
         pop hl
