@@ -115,6 +115,7 @@ putg:
 putc: 
     push af
     push hl
+
     push de
 
     sub 0x20        ; Subtract 32 from a.
@@ -133,9 +134,9 @@ putc:
     ld de, font
     add hl, de      ; Add base address to offset
 
-    pop de
+1:  pop de
 
-1:  call putg
+    call putg
 
     ; Advance to next column
     inc e
@@ -157,6 +158,7 @@ putc:
 newline:
 ;; Return to first column
     push af
+
     ld a, LCD_CMD_SETCOLUMN
     call lcd_busy_loop
     out (PORT_LCD_CMD), a
@@ -170,6 +172,7 @@ newline:
     add a, LCD_CMD_SETCOLUMN
     call lcd_busy_loop
     out (PORT_LCD_CMD), a
+
     pop af
     ret
 

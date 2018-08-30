@@ -20,18 +20,19 @@ start:
     ld d, 2
     ld iy, message
     call puts
-    ld iy, messageB
-    call puts
-1:
-    call get_key
-    cp 0x0A
-    jp z, end
+
+1:  call newline
+    ld a, '>'
     call putc
-    jp 1b
+
+2:  call get_key
+    cp 0x0A
+    jp z, 1b
+    call putc
+    jp 2b
+
 end:jr $
 
 .section .data
 message:
-    .db "Hello, userspace!", 0
-messageB:
-    .db " It works!", 0
+    .db "It works!", 0
