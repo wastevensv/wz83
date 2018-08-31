@@ -1,5 +1,5 @@
 .section .init
-start:
+init:
     call init_display
 
     ;; Set screen buffer to pattern.

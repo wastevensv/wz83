@@ -12,17 +12,19 @@ MEMORY
 }
 SECTIONS
 {
-    .kern 0x0 : AT(0x0)  {
-        *(.boot)
+    .kern 0x0000 : AT(0x0)  {
+        *(.start)
         *(.ktext)
+        *(.kdata)
     } > rom
-    .text 0x4000 : AT(0x4000) {
+    .prog 0x4000 : AT(0x4000) {
+        init = .;
         *(.init)
         *(.text)
-    } > rom
-    .data 0x8000 : AT(0x8000) {
-        *(.kdata)
         *(.data)
+    } > rom
+    .boot 0x0000 : AT(0x7C000) {
+        *(.boot)
     } > rom
     .priv 0x4000 : AT(0x70000) {
         *(.priv)

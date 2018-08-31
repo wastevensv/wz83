@@ -21,6 +21,10 @@ init_display:
     call lcd_busy_loop
     out (PORT_LCD_CMD), a       ; X-Increment Mode (vertical)
 
+    ld a, 0x3F + LCD_CMD_SETCONTRAST
+    call lcd_busy_loop
+    out (PORT_LCD_CMD), a ; Contrast
+
     pop af
     ret
 

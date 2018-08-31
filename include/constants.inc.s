@@ -34,6 +34,7 @@ PORT_INT_MASK       .equ 3
     define_mask INT_TIMER1, 1
     define_mask INT_TIMER2, 2
     define_mask INT_LINK, 3
+    define_mask INT_LOWP_ONHALT, 3
 
 ; read
 PORT_INT_TRIG       .equ 4
