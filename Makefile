@@ -1,5 +1,5 @@
 NAME=wz83
-VERSION=$(shell git describe --tags)
+VERSION=$(shell git describe --tags --abbrev=0)
 
 AS=z80-unknown-coff-as
 LD=z80-unknown-coff-ld

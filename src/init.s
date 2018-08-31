@@ -29,6 +29,8 @@ init:
     cp 0x0A
     jp z, 1b
     call putc
+    cp 0x0D
+    call z, poweroff
     jp 2b
 
 end:jr $
