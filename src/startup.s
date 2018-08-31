@@ -4,16 +4,25 @@
 .org 0x0000
 ;; RST 0 = reboot
     jp startup
-;; Magic Number
+;; Magic Number - For my own amusement.
 .db "WZ"
 
 .org 0x0008
 ;; RST 8 = return to init
     jp init
 
-;; .org 0x0038
+; 0x0026 - Magic numbers for boot code.
+.org 0x0026
+.db 0x00
+
+.org 0x0038
 ;; RST 38 = On interupt
-;   jp isr
+    jp isr
+
+; 0x0056 - Magic numbers for boot code.
+.org 0x0056
+.db 0xFF, 0xA5, 0xFF
+
 
 .org 0x007F
 .global startup
@@ -60,36 +69,37 @@ startup:
     jp init
     rst 0 ; Prevent runaway code from unlocking flash
 
- ; .global isr
- ; isr:
- ;     di
- ;     push af
- ;     in a, (PORT_INT_MASK)
- ; 
- ;     bit BIT_INT_ON, a
- ;     jp nz, 1f
- ; 
- ;     xor INT_ON
- ;     out (PORT_INT_MASK), a
- ;     call poweroff
- ; 1:  
- ;     pop af
- ;     ei
- ;     reti
- ; 
- ; .global poweroff
- ; poweroff: 
- ;     push af
- ;     ;; Enable ON key interrupt and link port interrupt.
- ;     ;; Set low power on halt bit.
- ;     ld a, INT_ON | INT_LINK
- ;     out (PORT_INT_MASK), a
- ;     halt      ;; Enter low power mode (disabling various devices)
- ;               ;; and wait for an interrupt (either ON key or
- ;               ;; link activity) which will enable all hardware
- ;               ;; devices again.
- ;     ld a, INT_ON ;; Enable ON key, timer. Disable linkport.
- ;                  ;; Keep calculator powered.
- ;     out (PORT_INT_MASK), a
- ;     pop af
- ;     ret
+.global isr
+isr:
+    di
+    push af
+    in a, (PORT_INT_TRIG)
+
+    bit BIT_INT_TRIG_ON, a
+    jp z, 1f
+
+    in a, (PORT_INT_MASK)
+    res INT_ON, a
+    out (PORT_INT_MASK), a
+    ;; call poweroff
+1:  
+    pop af
+    ei
+    ret
+
+;; .global poweroff
+;; poweroff: 
+;;     push af
+;;     ;; Enable ON key interrupt and link port interrupt.
+;;     ;; Set low power on halt bit.
+;;     ld a, INT_ON | INT_LINK
+;;     out (PORT_INT_MASK), a
+;;     halt      ;; Enter low power mode (disabling various devices)
+;;               ;; and wait for an interrupt (either ON key or
+;;               ;; link activity) which will enable all hardware
+;;               ;; devices again.
+;;     ld a, 0   ;; Enable ON key, timer. Disable linkport.
+;;               ;; Keep calculator powered.
+;;     out (PORT_INT_MASK), a
+;;     pop af
+;;     ret
