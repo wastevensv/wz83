@@ -3,12 +3,12 @@ init:
     call init_display
 
     ;; Set screen buffer to pattern.
-    ld hl, 0xC000
+    ld hl, gfx_buffer
     push hl
 
     ld (hl), 0xFF
-    ld de, 0xC001
-    ld bc, 767
+    ld de, gfx_buffer+1
+    ld bc, gfx_buffer_len
     ldir
 
     pop iy
@@ -38,3 +38,12 @@ end:jr $
 .section .data
 message:
     .db "It works!", 0
+
+.section .bss
+gfx_buffer:
+    .skip 767
+gfx_buffer_len equ $ - gfx_buffer
+
+txt_buffer:
+    .skip 400
+txt_buffer_len equ $ - txt_buffer

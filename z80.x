@@ -9,6 +9,7 @@ OUTPUT_ARCH("z80")
 MEMORY
 {
     rom  (rx)  : ORIGIN = 0x0000, LENGTH = 512k
+    ram  (rw)  : ORIGIN = 0xC000, LENGTH = 32k
 }
 SECTIONS
 {
@@ -32,4 +33,10 @@ SECTIONS
     .pad : AT(LENGTH(rom) - 1) {
 	 BYTE(0x42)
     } > rom
+    .bankA 0xC000 : {
+        *(.bss)
+    } > ram
+    .bankB 0xC000 : {
+        *(.bssB)
+    } > ram
 }
