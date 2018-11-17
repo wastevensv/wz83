@@ -62,11 +62,30 @@ init_graphic:
 ;;  it into the buffer at current location.
 ;; Inputs:
 ;;  A: Character to print
-;;  HL: Address in buffer to place character
+;;  DE: Base address of glyph buffer
+;;  BC: Offset into glyph buffer
+;; Outputs:
+;;  BC: New offset into glyph buffer
 putc:
     push af
     push hl
     push de
+
+    cp 0x0A         ; if LF
+    call z, newline
+    jp z, 1f
+
+    cp 0x0D         ; if CR
+    call z, carriage
+    jp z, 1f
+
+    cp 0x0C         ; if FF
+    call z, scroll
+    jp z, 1f
+
+    ld  h, d        ; set position
+    ld  l, e
+    add hl, bc
 
     push hl
 
@@ -86,15 +105,79 @@ putc:
     ld de, font
     add hl, de      ; Add base address to offset
 
-    ex de, hl
+    ex de, hl       ; Glyph pointer now in de.
 
     pop hl
 
-    ld (hl), d
+    ld (hl), d      ; Store glyph pointer in buffer.
     inc hl
     ld (hl), e
+    
+    inc bc
+    inc bc          ; Advance to next address in buffer.
 
 1:  pop de
+
+    ld a, b
+    cp 0x00         ; If buffer offset overflowed
+    jp z, 2f
+
+    call scroll     ; Scroll
+    ld bc, 0xE0     ; Reset to start of last line.
+
+2:
+    pop hl
+    pop af
+    ret
+
+newline:
+    push af
+    push hl
+
+    ld a, c
+    cp 0xE0       ; if on last line
+    jp c, 1f
+    call scroll   ; scroll instead of newline
+    jp 2f
+1:
+
+    ld hl, 32
+    add hl, bc  ; Increment by 32.
+    ld b, h
+    ld c, l
+
+2:  pop hl
+    pop af
+    ret
+
+carriage:
+    push af
+
+    ld a, 0xE0
+    and c
+    ld c, a         ; Round to lower 32.
+
+    pop af
+    ret
+
+scroll:
+    push af
+    push hl
+    push de
+    push bc
+
+    ld bc, 224      ; Copy rows 1-7 to 0-6
+    ld hl, 32
+    add hl, de
+    ldir
+
+    ld bc, 32       ; Clear last row.
+    ld (hl), 0x00
+    
+    ldir
+
+    pop bc
+    pop de
     pop hl
     pop af
     ret
@@ -107,65 +190,28 @@ putc:
 ;;  BC: Offset into glyph buffer
 ;;  IY: Text buffer (byte per character)
 ;; Outputs:
-;;  DE: Ending address in glyph buffer
+;;  BC: Ending address in glyph buffer
 puts:
     push iy
     push hl
-    push bc
+    push de
     push af
     di
 1: ; Next character
         ld a, (iy)      ; Load character code.
         cp 0
-        jp z, 4f        ; if 0, end of string.
+        jp z, 2f        ; if 0, end of string.
 
-        cp 0x0A         ; if LF
-        call z, newline
-        jp z, 3f
-
-        cp 0x0D         ; if CR
-        call z, carriage
-        jp z, 3f
-
-        ld  h, d
-        ld  l, e
-        add hl, bc
         call putc       ; Put character in buffer.
 
-        inc bc
-        inc bc          ; Advance to next address in buffer.
-
-3:      inc iy          ; Advance to next character
+        inc iy          ; Advance to next character
         jp 1b
-4: ; End loop.
+2: ; End loop.
     ei
     pop af
-    pop bc
+    pop de
     pop hl
     pop iy
-    ret
-
-newline:
-    push af
-    push hl
-
-    ld hl, 0x20
-    add hl, bc        ; Increment by 32.
-    ld b, h
-    ld c, l
-
-    pop hl
-    pop af
-    ret
-
-carriage:
-    push af
-
-    ld a, 0xE0
-    and c
-    ld c, a           ; Round to nearest 32.
-
-    pop af
     ret
 
 .global putg
@@ -191,7 +237,7 @@ putg:
     cp 0
     jp nz, 1f
 
-    jp 3f
+    ld de, font   ; Print blank on null ptr.
 
 1:
         di
@@ -262,15 +308,15 @@ display_glyphs:
     ld a, c
 
     cp 0x10                     ; Check if newline.
-    jp m, 1b
+    jp c, 1b
 
     ld c, 0                     ; Advance to next line.
     ld a, b
-    add a, 7
+    add a, 8
     ld b, a
 
     cp 0x40                     ; Check if end of buffer
-    jp m, 1b
+    jp c, 1b
 
     pop bc
     pop de
@@ -338,8 +384,8 @@ display_graphic:
 lcd_busy_loop:
     push bc
     ld c, PORT_LCD_CMD
-loop$:
+1:
     in b, (c)    ;bit 7 set if LCD is busy
-    jp m, loop$  ;repeat if bit 7 (sign bit) set.
+    jp m, 1b     ;repeat if bit 7 (sign bit) set.
     pop bc
     ret

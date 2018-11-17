@@ -21,14 +21,17 @@ init:
     ld iy, message
     call puts
 
-    ld de, glyph_buffer
+1:  ld de, glyph_buffer
     call display_glyphs
+    call get_key
+    call putc
+    jp 1b
 
 end:jr $
 
 .section .data
 message:
-    .db "It works!",10,13,"Even with long messages.", 0
+    .db "It works!",13,10,10,10,10,10,10,"Even with long messages.", 0
 
 .section .bss
 gfx_buffer:
