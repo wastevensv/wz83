@@ -8,42 +8,34 @@ init:
 
     ld (hl), 0xFF
     ld de, gfx_buffer+1
-    ld bc, gfx_buffer_len
+    ld bc, gfx_buffer_len-1
     ldir
 
+    inc bc
     pop iy
     call display_graphic
 
-    ;; Display messages
-    ld c, 0
-    ld e, 1
-    ld d, 2
+    ;; Display message
+    ld de, glyph_buffer
+    ld bc, 0
     ld iy, message
     call puts
 
-1:  call newline
-    ld a, '>'
-    call putc
-
-2:  call get_key
-    cp 0x0A
-    jp z, 1b
-    call putc
-    cp 0x0D
-    call z, poweroff
-    jp 2b
+    ld de, glyph_buffer
+    call display_glyphs
 
 end:jr $
 
 .section .data
 message:
-    .db "It works!", 0
+    .db "It works!",10,13,"Even with long messages.", 0
 
 .section .bss
 gfx_buffer:
-    .skip 767
+    .skip 768
 gfx_buffer_len equ $ - gfx_buffer
 
-txt_buffer:
-    .skip 400
-txt_buffer_len equ $ - txt_buffer
+glyph_buffer:
+    .skip 256
+glyph_buffer_len equ $ - glyph_buffer
+glyph_buffer_end equ $
