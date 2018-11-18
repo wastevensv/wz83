@@ -20,24 +20,46 @@ init:
     ld bc, 0
     ld iy, message
     call puts
+    ld bc, 0x10
 
 1:  ld de, glyph_buffer
     call display_glyphs
     call get_key
-    call putc
+    cp 0x20
+    jp nz, 2f
+    ld a, 0x0C
+2:  call putc
+
     call link_putc
+    call update_link_stat
     or a
     jp z, 1b
 
-    ld a, 'F'
-    call putc
     jp 1b
 
 end:jr $
 
+update_link_stat:
+    push af
+    push bc
+    ld bc, 0x00
+    or a
+    jp nz, 1f
+
+    ld a, '.'
+    jp 2f
+
+1:  ld a, '!'
+
+2:  call putc
+    pop bc
+    pop af
+    ret
+
+
 .section .data
 message:
-    .db "It works!",13,10,10,10,10,10,10,"Even with long messages.", 0
+    .db "  It works!",0
 
 .section .bss
 gfx_buffer:

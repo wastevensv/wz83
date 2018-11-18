@@ -63,7 +63,7 @@ init_graphic:
 ;; Inputs:
 ;;  A: Character to print
 ;;  DE: Base address of glyph buffer
-;;  BC: Offset into glyph buffer
+;;  BC: Offset into glyph buffer (in characters)
 ;; Outputs:
 ;;  BC: New offset into glyph buffer
 putc:
@@ -73,19 +73,24 @@ putc:
 
     cp 0x0A         ; if LF
     call z, newline
-    jp z, 1f
+    jp z, 3f
 
     cp 0x0D         ; if CR
     call z, carriage
-    jp z, 1f
+    jp z, 3f
 
     cp 0x0C         ; if FF
     call z, scroll
-    jp z, 1f
+    jp z, 3f
+
+    push bc
 
     ld  h, d        ; set position
     ld  l, e
+    rl  c           ; 1 character = 2 bytes
     add hl, bc
+
+    pop bc
 
     push hl
 
@@ -112,20 +117,19 @@ putc:
     ld (hl), d      ; Store glyph pointer in buffer.
     inc hl
     ld (hl), e
-    
-    inc bc
-    inc bc          ; Advance to next address in buffer.
 
-1:  pop de
+1:
+    ld a, c
+    cp 0x7F         ; Is buffer offset overflowed?
+    jp c, 2f        ; If not, return.
 
-    ld a, b
-    cp 0x00         ; If buffer offset overflowed
-    jp z, 2f
+    call scroll     ; Else, scroll
+    ld bc, 0x70     ; Reset to start of last line.
+    jp 3f
 
-    call scroll     ; Scroll
-    ld bc, 0xE0     ; Reset to start of last line.
+2:  inc bc
 
-2:
+3:  pop de
     pop hl
     pop af
     ret
@@ -135,14 +139,14 @@ newline:
     push hl
 
     ld a, c
-    cp 0xE0       ; if on last line
+    cp 0x70       ; if on last line
     jp c, 1f
     call scroll   ; scroll instead of newline
     jp 2f
 1:
 
-    ld hl, 32
-    add hl, bc  ; Increment by 32.
+    ld hl, 16
+    add hl, bc  ; Increment by 16.
     ld b, h
     ld c, l
 
@@ -153,9 +157,9 @@ newline:
 carriage:
     push af
 
-    ld a, 0xE0
+    ld a, 0xF0
     and c
-    ld c, a         ; Round to lower 32.
+    ld c, a         ; Round to lower 16.
 
     pop af
     ret
@@ -173,7 +177,7 @@ scroll:
 
     ld bc, 32       ; Clear last row.
     ld (hl), 0x00
-    
+
     ldir
 
     pop bc
