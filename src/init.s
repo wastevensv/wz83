@@ -25,6 +25,12 @@ init:
     call display_glyphs
     call get_key
     call putc
+    call link_putc
+    or a
+    jp z, 1b
+
+    ld a, 'F'
+    call putc
     jp 1b
 
 end:jr $
