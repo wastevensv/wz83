@@ -69,19 +69,18 @@ init_graphic:
 putc:
     push af
     push hl
-    push de
 
     cp 0x0A         ; if LF
     call z, newline
-    jp z, 3f
+    jp z, 2f
 
     cp 0x0D         ; if CR
     call z, carriage
-    jp z, 3f
+    jp z, 2f
 
     cp 0x0C         ; if FF
     call z, scroll
-    jp z, 3f
+    jp z, 2f
 
     push bc
 
@@ -91,6 +90,8 @@ putc:
     add hl, bc
 
     pop bc
+
+    push de
 
     push hl
 
@@ -112,24 +113,24 @@ putc:
 
     ex de, hl       ; Glyph pointer now in de.
 
-    pop hl
+1:  pop hl
 
     ld (hl), d      ; Store glyph pointer in buffer.
     inc hl
     ld (hl), e
 
-1:
+    pop de
+
+    inc bc          ; Next character
+2:
     ld a, c
-    cp 0x7F         ; Is buffer offset overflowed?
-    jp c, 2f        ; If not, return.
+    cp 0x80         ; Is buffer offset overflowed?
+    jp c, 3f        ; If not, return.
 
     call scroll     ; Else, scroll
     ld bc, 0x70     ; Reset to start of last line.
-    jp 3f
 
-2:  inc bc
-
-3:  pop de
+3:
     pop hl
     pop af
     ret
