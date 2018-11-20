@@ -97,7 +97,7 @@ putc:
 
     sub 0x20        ; Subtract 32 from a.
     ld hl, font
-    jp m, 1f
+    jp c, 1f        ; If result is negative, print blank.
 
     ld h, 0
     ld l, a

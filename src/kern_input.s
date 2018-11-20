@@ -14,31 +14,39 @@ get_key:
     ld c, PORT_KEYPAD
     ld d, 0xFE
 
-1:  ld b, 0xFF          ; Reset the keypad.
+1:  ld b, 0xFF        ; Reset the keypad.
     out (c), b
 
-    rrc d               ; Select next group.
+    rrc d             ; Select next group.
     out (c), d
 
     in a, (c)
     cp 0xFF
-    jp z, 1b            ; Check next group if no key found.
+    jp nz, 2f         ; If key pressed, wait for release.
 
-    ld e, a
+    ld a, d
+    cp 0xFE
+    jp nz, 1b         ; Check if back at first group.
+    jp z, 4f          ; If so, fail.
 
-1:  ld b, 0xFF          ; Reset the keypad.
+2:  ld e, a           ; D, E = group, key
+
+3:  ld b, 0xFF        ; Reset the keypad.
     out (c), b
 
     out (c), d
 
     in a, (c)
     cp 0xFF
-    jp nz, 1b            ; Check next group if no key found.
+    jp nz, 3b         ; Wait until key released.
 
 
     call map_key
+    jp 5f
 
-    pop de
+4:  ld a, 0x00        ; Fail case: return NULL key.
+
+5:  pop de
     pop bc
     ret
 

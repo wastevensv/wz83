@@ -22,20 +22,53 @@ init:
     call puts
     ld bc, 0x10
 
-1:  ld de, glyph_buffer
+repl:
+    ld de, glyph_buffer
     call display_glyphs
     call get_key
-    cp 0x20
-    jp nz, 2f
+    cp 0x00
+    jp nz, print
+
+    jp repl
+
+print:
+    cp 0xFF
+    jp nz, 1f
+    call poweroff
+    jp repl
+1:
+
+    cp 0x0A                     ; if LF
+    jp nz, 1f
+    call putc
+    jp repl
+1:
+
+    cp 0x0D                     ; if NL
+    jp nz, 1f
+    call putc
+    jp repl
+1:
+
+    cp 0x08                     ; Remap delete to form feed (scroll).
+    jp nz, 1f
     ld a, 0x0C
-2:  call putc
+    call putc
+    jp repl
+1:
 
-    call link_putc
-    call update_link_stat
-    or a
-    jp z, 1b
+    cp 0x20                     ; Ignore invalid or null keys.
+    jp c, repl
 
-    jp 1b
+    cp 0x80                     ; Ignore invalid or null keys.
+    jp nc, repl
+
+    call putc
+
+    call link_putc              ; Output over link port.
+    call update_link_stat       ; Update link status display.
+
+    jp repl
 
 end:jr $
 
@@ -46,10 +79,10 @@ update_link_stat:
     or a
     jp nz, 1f
 
-    ld a, '.'
+    ld a, '.'                   ; Success = .
     jp 2f
 
-1:  ld a, '!'
+1:  ld a, '!'                   ; Failed = !
 
 2:  call putc
     pop bc
