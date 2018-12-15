@@ -55,7 +55,9 @@ put1:
     jp z, 3f                    ; If back at bit 0, successful.
     jp put_bit                  ; Transmit next bit.
 
-2:  ld a, 1                     ; Fail
+2:  ld a, 0                     ; Set both lines high.
+    out (PORT_LINKPORT), a
+    ld a, 1                     ; Fail
     jp 4f
 
 3:  ld a, 0                     ; Succeed
