@@ -17,7 +17,7 @@ init:
 
     ;; Display message
     ld de, glyph_buffer
-    ld bc, 0
+    ld bc, 0x02
     ld iy, message
     call puts
     ld bc, 0x10
@@ -92,7 +92,7 @@ update_link_stat:
 
 .section .data
 message:
-    .db "  It works!",0
+    .db "It works!",0
 
 .section .bss
 gfx_buffer:
