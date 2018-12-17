@@ -3,14 +3,14 @@
 An alternative TI-83+ firmware.
 
 ## Status
-[x] Calculator boots
-[x] Power off/on interrupts
-[x] Display Output
-[x] Keypad Input
-[x] Link Port Output
-[ ] Link Port Input
-[ ] RPN REPL
-[ ] Forth?
+* [x] Calculator boots
+* [x] Power off/on interrupts
+* [x] Display Output
+* [x] Keypad Input
+* [x] Link Port Output
+* [ ] Link Port Input
+* [ ] RPN REPL
+* [ ] Forth?
 
 ## Build Dependencies
 * Z80 binutils
