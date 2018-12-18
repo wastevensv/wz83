@@ -25,9 +25,12 @@ init:
     ld bc, 0x70
 
     ;; Start REPL
+    call update_mode
 read:
     ld de, glyph_buffer
     call display_glyphs
+
+    ld hl, (active_keymap)
     call get_key
     cp 0x00
     jp nz, eval                 ; If valid character, print
@@ -41,7 +44,7 @@ eval:
     ld a, (mode_flag)
     xor 1
     ld (mode_flag), a
-    call update_mode_stat
+    call update_mode
     jp read
 1:
 
@@ -51,7 +54,7 @@ eval:
     ld a, (mode_flag)
     xor 2
     ld (mode_flag), a
-    call update_mode_stat
+    call update_mode
     jp read
 1:
 
@@ -111,11 +114,14 @@ update_link_stat:
     pop af
     ret
 
-update_mode_stat:
+update_mode:
     push af
     push bc
+    push de
+    push hl
     ld bc, 0x01
 
+    ld hl, active_keymap
     ld a, (mode_flag)
     cp 1
     jp z, 1f
@@ -126,19 +132,29 @@ update_mode_stat:
     cp 3
     jp z, 3f
 
+    ld de, keymap00
     ld a, ' '                   ; No shift = ' '
     jp 4f
 
-1:  ld a, '2'                   ; Shift = '2'
+1:  ld de, keymap01
+    ld a, '2'                   ; Shift = '2'
     jp 4f
 
-2:  ld a, 'a'                   ; Alpha = 'a'
+2:  ld de, keymap10
+    ld a, 'a'                   ; Alpha = 'a'
     jp 4f
 
-3:  ld a, 'A'                   ; Alpha+Shift = 'A'
+3:  ld de, keymap11
+    ld a, 'A'                   ; Alpha+Shift = 'A'
     jp 4f
 
-4:  call putc
+4:  ld (hl), e
+    inc hl
+    ld (hl), d
+    ld de, glyph_buffer
+    call putc
+    pop hl
+    pop de
     pop bc
     pop af
     ret
@@ -158,6 +174,8 @@ glyph_buffer:
 glyph_buffer_len equ $ - glyph_buffer
 glyph_buffer_end equ $
 
-.global mode_flag
 mode_flag:
     .skip 1
+
+active_keymap:
+    .skip 2

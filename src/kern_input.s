@@ -7,8 +7,10 @@
 ;;; Inputs:
 ;;;  None
 ;;; Outputs:
-;;;  A - Key value pressed
+;;;  A - Keycode
+;;;  HL- Active keymap.
 get_key:
+    push hl
     push bc
     push de
 
@@ -44,28 +46,9 @@ get_key:
     cp 0xFF
     jp nz, 3b                   ; Wait until key released.
 
-
-    call map_key
-    jp 5f
-
-    ; Fail case: return NULL key.
-4:  ld a, 0x00
-
-5:  pop de
-    pop bc
-    ret
-
-.global map_key
-;;; map_key
-;;;  maps keycode to character
-;;; Inputs:
-;;;  DE - raw key code pressed
-;;; Outputs:
-;;;  A - Key value pressed
-map_key:
     push hl
-    push de
-
+    ;; Convert group+key to keycode.
+        
     ;; Find active (low) group
     ld h, 0
 1:  inc h
@@ -86,20 +69,27 @@ map_key:
     sla h                       ; H * 8 (3 bits to left)
 
     or h                        ; Or A with H
+                                ; A now contains key map index
+    pop hl
+
 
     ld d, 0
     ld e, a
-    ld hl, keymap               ; HL now contains address of char code.
     add hl, de
     ld a, (hl)                  ; A now contains char code.
 
-    pop de
+    jp 5f
+
+    ; Fail case: return NULL key.
+4:  ld a, 0x00
+
+5:  pop de
+    pop bc
     pop hl
     ret
 
 .section .kdata
 
-.global keymap
 ;;; 0x00      = Invalid key, NULL
 ;;; 0x08      = Delete key, Backspace
 ;;; 0x0A      = Enter, Newline
@@ -109,10 +99,51 @@ map_key:
 ;;; 0x13      = Down
 ;;; 0x14      = Up
 ;;; 0x1B      = Mode key, Escape
-;;; 0x20-0x30 = Non A-Z Characters.
+;;; 0x20-0x3F = Non A-Z Characters.
 ;;; 0x40-0x7F = A-Z Characters.
 ;;; 0x80-0xFF = Modifier/Special Keys
-keymap:
+
+.global keymap00
+keymap00:
+;;; Key0  Key1  Key2  Key3  Key4  Key5  Key6  Key7
+.db 0x11, 0x13, 0x12, 0x14, 0x00, 0x00, 0x00, 0x00 ; Grp0
+.db 0x0A, "+" , "-" , "*" , "/" , "^" , 0x0D, 0x00 ; Grp1
+.db "-" , "3" , "6" , "9" , "," , 0x00, 0xFB, 0x00 ; Grp2
+.db "." , "2" , "5" , "8" , "(" , 0x00, 0x00, 0xFC ; Grp3
+.db "0" , "1" , "4" , "7" , ")" , 0x00, 0x00, 0xFD ; Grp4
+.db 0x00, ">" , 0x00, 0x00, 0x00, 0x00, 0x00, 0xFE ; Grp5
+.db 0xF5, 0xF4, 0xF3, 0xF2, 0xF1, 0xFF, 0x1B, 0x08 ; Grp6
+.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ; Grp7
+
+;;; Shift Keymap
+.global keymap01
+keymap01:
+;;; Key0  Key1  Key2  Key3  Key4  Key5  Key6  Key7
+.db 0x11, 0x13, 0x12, 0x14, 0x00, 0x00, 0x00, 0x00 ; Grp0
+.db 0x0A, "+" , "[" , "]" , "/" , "^" , 0x0D, 0x00 ; Grp1
+.db "-" , "3" , "6" , "9" , "," , 0x00, 0xFB, 0x00 ; Grp2
+.db "." , "2" , "5" , "8" , "{" , 0x00, 0x00, 0xFC ; Grp3
+.db "0" , "1" , "4" , "7" , "}" , 0x00, 0x00, 0xFD ; Grp4
+.db 0x00, ">" , 0x00, 0x00, 0x00, 0x00, 0x00, 0xFE ; Grp5
+.db 0xF5, 0xF4, 0xF3, 0xF2, 0xF1, 0xFF, 0x1B, 0x08 ; Grp6
+.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ; Grp7
+
+;;; Alpha Keymap
+.global keymap10
+keymap10:
+;;; Key0  Key1  Key2  Key3  Key4  Key5  Key6  Key7
+.db 0x11, 0x13, 0x12, 0x14, 0x00, 0x00, 0x00, 0x00 ; Grp0
+.db 0x0A, 0x21, "w" , "r" , "m" , "h" , 0x0D, 0x00 ; Grp1
+.db 0x3F, 0x40, "v" , "q" , "l" , "g" , 0xFB, 0x00 ; Grp2
+.db 0x3A, "z" , "u" , "p" , "k" , "f" , "c" , 0xFC ; Grp3
+.db 0x20, "y" , "t" , "o" , "j" , "e" , "b" , 0xFD ; Grp4
+.db 0x00, "x" , "s" , "n" , "i" , "d" , "a" , 0xFE ; Grp5
+.db 0xF5, 0xF4, 0xF3, 0xF2, 0xF1, 0xFF, 0x1B, 0x08 ; Grp6
+.db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ; Grp7
+
+;;; Shift+Alpha Keymap
+.global keymap11
+keymap11:
 ;;; Key0  Key1  Key2  Key3  Key4  Key5  Key6  Key7
 .db 0x11, 0x13, 0x12, 0x14, 0x00, 0x00, 0x00, 0x00 ; Grp0
 .db 0x0A, 0x21, "W" , "R" , "M" , "H" , 0x0D, 0x00 ; Grp1
