@@ -1,4 +1,6 @@
 .section .init
+;;; Init
+;;;  Main REPL
 init:
     call init_display
 
@@ -15,19 +17,20 @@ init:
     pop iy
     call display_graphic
 
-    ;; Display message
+    ;; Display welcome message
     ld de, glyph_buffer
     ld bc, 0x02
     ld iy, message
     call puts
     ld bc, 0x10
 
+    ;; Start REPL
 repl:
     ld de, glyph_buffer
     call display_glyphs
     call get_key
     cp 0x00
-    jp nz, print
+    jp nz, print                ; If valid character, print
 
     jp repl
 
@@ -38,35 +41,41 @@ print:
     jp repl
 1:
 
-    cp 0x0A                     ; if LF
+    ;; Allow line feed characters
+    cp 0x0A
     jp nz, 1f
     call putc
     jp repl
 1:
 
-    cp 0x0D                     ; if NL
+    ;; Allow newline characters
+    cp 0x0D
     jp nz, 1f
     call putc
     jp repl
 1:
 
-    cp 0x08                     ; Remap delete to form feed (scroll).
+    ;; Remap delete to form feed (scroll)
+    cp 0x08
     jp nz, 1f
     ld a, 0x0C
     call putc
     jp repl
 1:
 
-    cp 0x20                     ; Ignore invalid or null keys.
+    ;; Ignore invalid or null keys
+    cp 0x20
     jp c, repl
 
-    cp 0x80                     ; Ignore invalid or null keys.
+    cp 0x80
     jp nc, repl
 
+    ;; Print character
     call putc
 
-    call link_putc              ; Output over link port.
-    call update_link_stat       ; Update link status display.
+    ;; Output over link port and update link status
+    call link_putc
+    call update_link_stat
 
     jp repl
 
@@ -98,6 +107,7 @@ message:
 gfx_buffer:
     .skip 768
 gfx_buffer_len equ $ - gfx_buffer
+gfx_buffer_end equ $
 
 glyph_buffer:
     .skip 256

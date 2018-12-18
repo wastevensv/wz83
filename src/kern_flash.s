@@ -3,47 +3,51 @@
 
 .section .ktext
 
+;;; Prevent runaway code from unlocking flash.
     rst 0; Just in case.
 
-;; unlockFlash [Flash]
-;;  Unlocks Flash and unlocks protected ports.
-;; Notes:
-;;  **Do not use this unless you know what you're doing.**
-;;  
-;;  Please call [[lockFlash]] when you finish what you're doing and don't spend too
-;;  much time with Flash unlocked. Disable interrupts while Flash is unlocked.
 .global unlockFlash
+;;; unlockFlash
+;;;  Unlocks Flash and unlocks protected ports.
+;;; Notes:
+;;;  **Do not use this unless you know what you're doing.**
+;;;
+;;;  Please call [[lockFlash]] when you finish what you're doing and don't spend too
+;;;  much time with Flash unlocked. Disable interrupts while Flash is unlocked.
 unlockFlash:
     push af
     push bc
-        in a, (6)
+        in a, (PORT_BANKA)      ; Read current page state
         push af
-            ld a, privledgedPage 
-            out (6), a
+            ld a, privledgedPage
+            out (PORT_BANKA), a     ; Map privledged page to RAM
             ld b, 0x01
             ld c, 0x14
-            call 0x4001
+            call 0x4001             ; Call _unlockFlash from privledged page.
+                                    ; (see unlock.s)
         pop af
-        out (6), a
+        out (PORT_BANKA), a     ; Restore previous page state
     pop bc
     pop af
     ret
 
-;; lockFlash [Flash]
-;;  Locks Flash and locks protected ports.
 .global lockFlash
+;;; lockFlash
+;;;  Locks Flash and locks protected ports.
 lockFlash:
     push af
     push bc
-        in a, (6)
+        in a, (PORT_BANKA)      ; Read current page state
         push af
-            ld a, privledgedPage 
-            out (6), a
+            ld a, privledgedPage
+            out (PORT_BANKA), a     ; Map privledged page to RAM
             ld b, 0x00
             ld c, 0x14
-            call 0x4004
+            call 0x4004             ; Call _lockFlash from privledged page.
+                                    ; (see unlock.s)
+
         pop af
-        out (6), a
+        out (PORT_BANKA), a     ; Restore previous page state
     pop bc
     pop af
     ret

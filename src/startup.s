@@ -2,30 +2,33 @@
 
 .section .start
 .org 0x0000
-;; RST 0 = reboot
+;;; RST 0 = reboot
     jp startup
-;; Magic Number - For my own amusement.
+;;; Magic Number - For my own amusement.
 .db "WZ"
 
 .org 0x0008
-;; RST 8 = return to init
+;;; RST 8 = return to init
     jp init
 
-; 0x0026 - Magic numbers for boot code.
+;;; 0x0026 - Magic numbers for boot code.
 .org 0x0026
 .db 0x00
 
 .org 0x0038
-;; RST 38 = On interupt
+;;; RST 38 = On interupt
     jp isr
 
-; 0x0056 - Magic numbers for boot code.
+;;; 0x0056 - Magic numbers for boot code.
 .org 0x0056
 .db 0xFF, 0xA5, 0xFF
 
 
 .org 0x007F
 .global startup
+;;; startup
+;;;  Remaps memory, zeros RAM, unlocks RAM and flash, Sets up interrupts,
+;;;  Loads and jumps to init.
 startup:
     di
 
@@ -36,10 +39,10 @@ startup:
     out (PORT_MEM_TIMER), a
 
     ;; Set memory mapping
-    ;; Bank 0: Flash Page 00
-    ;; Bank 1: Flash Page *
-    ;; Bank 2: RAM Page 01
-    ;; Bank 3: RAM Page 00
+    ;; Fixed : Flash Page 00 (0x0000)
+    ;; Bank A: Flash Page *  (0x4000)
+    ;; Bank B: RAM Page 01   (0x8000)
+    ;; Fixed : RAM Page 00   (0xC000)
     ld a, 1 | BANKB_ISRAM_CPU6
     out (PORT_BANKB), a
 
@@ -50,7 +53,7 @@ startup:
     ld bc, 0x7FFF
     ldir
 
-    ld a, 0x1F ; Unlock program in page 0x1F
+    ld a, 0x1F                  ; Unlock program in page 0x1F
     out (PORT_BANKA), a
 
     ;; Unlock RAM and Flash
@@ -64,16 +67,20 @@ startup:
     set BIT_INT_ON, a
     out (PORT_INT_MASK), a
 
-    ld a, 1 ; Init program in page 1
+    ld a, 1                     ; Init program in page 1
+    ;; Bank A: Flash Page 1  (0x4000)
     out (PORT_BANKA), a
 
-    ld a, 2 ; Data in page 2
+    ld a, 2                     ; Data in page 2
+    ;; Bank B: Flash Page 2  (0x8000)
     out (PORT_BANKB), a
 
     jp init
-    rst 0 ; Prevent runaway code from unlocking flash
+    rst 0                       ; Prevent runaway code from going too far
 
 .global isr
+;;; Interrupt service routine
+;;;  ON interrupt wakes from sleep.
 isr:
     di
     push af
@@ -92,13 +99,15 @@ isr:
     in a, (PORT_INT_MASK)
     set BIT_INT_ON, a
     out (PORT_INT_MASK), a
-1:  
+1:
     pop af
     ei
     reti
 
 .global poweroff
-poweroff: 
+;;; Poweroff
+;;;  Turn off the display and halt the CPU till interrupt.
+poweroff:
     di
     push af
 
@@ -113,10 +122,10 @@ poweroff:
     out (PORT_INT_MASK), a
 
     ei
-    halt      ;; Enter low power mode (disabling various devices)
-              ;; and wait for an interrupt (either ON key or
-              ;; link activity) which will enable all hardware
-              ;; devices again.
+    halt      ; Enter low power mode (disabling various devices)
+              ; and wait for an interrupt (either ON key or
+              ; link activity) which will enable all hardware
+              ; devices again.
     di
 
     ;; Clear ON Interrupt.

@@ -1,12 +1,13 @@
 .include "constants.inc.s"
 .section .ktext
+
 .global get_key
-;; get_key
-;;  Blocking read of next character.
-;; Inputs:
-;;  None
-;; Outputs:
-;;  A - Key value pressed
+;;; get_key
+;;;  Blocking read of next character.
+;;; Inputs:
+;;;  None
+;;; Outputs:
+;;;  A - Key value pressed
 get_key:
     push bc
     push de
@@ -14,75 +15,83 @@ get_key:
     ld c, PORT_KEYPAD
     ld d, 0xFE
 
-1:  ld b, 0xFF        ; Reset the keypad.
+    ;; Reset the keypad.
+1:  ld b, 0xFF
     out (c), b
 
-    rrc d             ; Select next group.
+    ;; Select and read next group.
+    rrc d
     out (c), d
-
     in a, (c)
     cp 0xFF
-    jp nz, 2f         ; If key pressed, wait for release.
+    jp nz, 2f                   ; If key pressed, wait for release.
 
+    ;; Check if back at first group.
     ld a, d
     cp 0xFE
-    jp nz, 1b         ; Check if back at first group.
-    jp z, 4f          ; If so, fail.
+    jp nz, 1b                   ; If not, continue.
+    jp z, 4f                    ; If so, fail.
 
-2:  ld e, a           ; D, E = group, key
+2:  ld e, a                     ; D, E = group, key
 
-3:  ld b, 0xFF        ; Reset the keypad.
+    ;; Reset the keypad.
+3:  ld b, 0xFF
     out (c), b
 
+    ;; Check if key released
     out (c), d
-
     in a, (c)
     cp 0xFF
-    jp nz, 3b         ; Wait until key released.
+    jp nz, 3b                   ; Wait until key released.
 
 
     call map_key
     jp 5f
 
-4:  ld a, 0x00        ; Fail case: return NULL key.
+    ; Fail case: return NULL key.
+4:  ld a, 0x00
 
 5:  pop de
     pop bc
     ret
 
 .global map_key
+;;; map_key
+;;;  maps keycode to character
+;;; Inputs:
+;;;  DE - raw key code pressed
+;;; Outputs:
+;;;  A - Key value pressed
 map_key:
-;; map_key
-;;  maps keycode to character
-;; Inputs:
-;;  DE - raw key code pressed
-;; Outputs:
-;;  A - Key value pressed
     push hl
     push de
 
+    ;; Find active (low) group
     ld h, 0
 1:  inc h
-    srl d
+    srl d                       ; Shift D till 0
     jp c, 1b
     dec h
 
-    ld a, 0
+    ;; Find active (low) key
+    ld a, 0                     ; Shift E till 0
 1:  inc a
     srl e
     jp c, 1b
     dec a
 
+    ;; Move bit 2-0 of H into bits 5-3 of A
     sla h
     sla h
-    sla h       ; H * 8 (3 bits to left)
+    sla h                       ; H * 8 (3 bits to left)
 
-    or h        ; Or A with H
+    or h                        ; Or A with H
+
     ld d, 0
     ld e, a
-    ld hl, keymap ; HL now contains address of char code.
+    ld hl, keymap               ; HL now contains address of char code.
     add hl, de
-    ld a, (hl)
+    ld a, (hl)                  ; A now contains char code.
 
     pop de
     pop hl

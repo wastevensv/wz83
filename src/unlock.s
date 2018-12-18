@@ -1,6 +1,6 @@
 .include "constants.inc.s"
 
-.section .priv
+.section .priv               ; Loaded into page 0x1F
 rst 0 ; Crash before runaway code breaks things
 
 jp _unlockFlash
