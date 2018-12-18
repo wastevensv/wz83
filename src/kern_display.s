@@ -203,8 +203,11 @@ scroll:
     ldir
 
     ;; Clear last row
-    ld bc, 32
+    ld bc, 31
+    ld h, d
+    ld l, e
     ld (hl), 0x00
+    inc de
 
     ldir
 
