@@ -75,7 +75,6 @@ eval:
     ;; Remap delete to form feed (scroll)
     cp 0x08
     jp nz, 1f
-    ld a, 0x0C
     call putc
     jp read
 1:

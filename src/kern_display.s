@@ -80,6 +80,11 @@ putc:
     push af
     push hl
 
+    ;; if Backspace, clear last glyph.
+    cp 0x08
+    call z, backspace
+    jp z, 2f
+
     ;; if LF, advance to next line.
     cp 0x0A
     call z, newline
@@ -149,6 +154,12 @@ putc:
 3:
     pop hl
     pop af
+    ret
+
+;;; backspace
+;;;  BC: Offset into glyph buffer (in characters)
+backspace:
+    dec bc
     ret
 
 ;;; Newline
