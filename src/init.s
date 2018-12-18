@@ -22,37 +22,51 @@ init:
     ld bc, 0x02
     ld iy, message
     call puts
-    ld bc, 0x10
+    ld bc, 0x70
 
     ;; Start REPL
-repl:
+read:
     ld de, glyph_buffer
     call display_glyphs
     call get_key
     cp 0x00
-    jp nz, print                ; If valid character, print
+    jp nz, eval                 ; If valid character, print
 
-    jp repl
+    jp read
 
-print:
+eval:
+    ;; Set flag on shift (2nd) key.
     cp 0xFF
     jp nz, 1f
-    call poweroff
-    jp repl
+    ld a, (mode_flag)
+    xor 1
+    ld (mode_flag), a
+    call update_mode_stat
+    jp read
+1:
+
+    ;; Set flag on Alpha key.
+    cp 0xFE
+    jp nz, 1f
+    ld a, (mode_flag)
+    xor 2
+    ld (mode_flag), a
+    call update_mode_stat
+    jp read
 1:
 
     ;; Allow line feed characters
     cp 0x0A
     jp nz, 1f
     call putc
-    jp repl
+    jp read
 1:
 
     ;; Allow newline characters
     cp 0x0D
     jp nz, 1f
     call putc
-    jp repl
+    jp read
 1:
 
     ;; Remap delete to form feed (scroll)
@@ -60,15 +74,15 @@ print:
     jp nz, 1f
     ld a, 0x0C
     call putc
-    jp repl
+    jp read
 1:
 
     ;; Ignore invalid or null keys
     cp 0x20
-    jp c, repl
+    jp c, read
 
     cp 0x80
-    jp nc, repl
+    jp nc, read
 
     ;; Print character
     call putc
@@ -76,8 +90,7 @@ print:
     ;; Output over link port and update link status
     call link_putc
     call update_link_stat
-
-    jp repl
+    jp read
 
 end:jr $
 
@@ -98,6 +111,37 @@ update_link_stat:
     pop af
     ret
 
+update_mode_stat:
+    push af
+    push bc
+    ld bc, 0x01
+
+    ld a, (mode_flag)
+    cp 1
+    jp z, 1f
+
+    cp 2
+    jp z, 2f
+
+    cp 3
+    jp z, 3f
+
+    ld a, ' '                   ; No shift = ' '
+    jp 4f
+
+1:  ld a, '2'                   ; Shift = '2'
+    jp 4f
+
+2:  ld a, 'a'                   ; Alpha = 'a'
+    jp 4f
+
+3:  ld a, 'A'                   ; Alpha+Shift = 'A'
+    jp 4f
+
+4:  call putc
+    pop bc
+    pop af
+    ret
 
 .section .data
 message:
@@ -113,3 +157,7 @@ glyph_buffer:
     .skip 256
 glyph_buffer_len equ $ - glyph_buffer
 glyph_buffer_end equ $
+
+.global mode_flag
+mode_flag:
+    .skip 1
